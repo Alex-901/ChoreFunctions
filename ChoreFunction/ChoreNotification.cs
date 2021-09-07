@@ -109,7 +109,7 @@ namespace ChoreFunction
 
         public static void SendEmail(string content)
         {
-            //TODO: Get from app settings
+            //TODO: Get from app settings and remove from source control
             var apiKey = "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";
             var client = new SendGridClient(apiKey);
             var msg = new SendGridMessage()
