@@ -6,6 +6,7 @@ using ChoreFunction.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using Twilio;
@@ -14,10 +15,17 @@ using Twilio.Types;
 
 namespace ChoreFunction
 {
-    public static class ChoreNotification
+    public class ChoreNotification
     {
+        private readonly ConfigurationItems _configurationItems;
+
+        public ChoreNotification(IOptions<ConfigurationItems> configurationItems)
+        {
+            _configurationItems = configurationItems.Value;
+        }
+
         [FunctionName("ChoreNotification")]
-        public static void Run([TimerTrigger("0 22 * * *"
+        public void Run([TimerTrigger("0 22 * * *"
             #if DEBUG
             , RunOnStartup = true
             #endif
@@ -34,7 +42,7 @@ namespace ChoreFunction
             SendWhatsapp(BuildNotificationContent(chores, false));
         }
 
-        private static string BuildNotificationContent(List<DTOChores> chores, bool html = true)
+        private string BuildNotificationContent(List<DTOChores> chores, bool html = true)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -83,14 +91,14 @@ namespace ChoreFunction
             return sb.ToString();
         }
 
-        public static List<DTOChores> GetChoresDueToday()
+        public List<DTOChores> GetChoresDueToday()
         {
             List<DTOChores> retVal = new List<DTOChores>();
 
             using (var client = new HttpClient())
             {
                 //TODO Add to config
-                client.BaseAddress = new Uri("https://choreapi.azurewebsites.net/");
+                client.BaseAddress = new Uri(_configurationItems.APIBaseAddress);
 
                 HttpResponseMessage response = client.GetAsync($"api/Chore/GetChoresbyDueDate/{GetAusDate().ToString("yyyy-MM-dd")}").Result;
 
@@ -107,10 +115,10 @@ namespace ChoreFunction
             return retVal;
         }
 
-        public static void SendEmail(string content)
+        public void SendEmail(string content)
         {
-            //TODO: Get from app settings
-            var apiKey = "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";
+            //TODO: Get from app settings and remove from source control
+            var apiKey = _configurationItems.SendGridkey;
             var client = new SendGridClient(apiKey);
             var msg = new SendGridMessage()
             {
@@ -125,12 +133,12 @@ namespace ChoreFunction
             response.Wait();
         }
 
-        public static void SendWhatsapp(string content)
+        public void SendWhatsapp(string content)
         {
             //TODO: Get from app settings
             TwilioClient.Init(
-               "ACbd2ded232650fe8b256e968fc3bd7012",
-               "37dbefe1c4bd68765e8ecccdf7ee6394"
+               _configurationItems.TwilioUser,
+               _configurationItems.TwilioPassword
            );
 
             MessageResource.Create(
@@ -145,7 +153,7 @@ namespace ChoreFunction
                body: content
            );
         }
-        private static DateTime GetAusDate()
+        private DateTime GetAusDate()
         {
             TimeZoneInfo timeInfo = TimeZoneInfo.FindSystemTimeZoneById("AUS Eastern Standard Time");
             return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeInfo);
