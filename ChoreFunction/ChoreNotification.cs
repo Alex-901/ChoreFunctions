@@ -109,6 +109,7 @@ namespace ChoreFunction
 
         public static void SendEmail(string content)
         {
+            //TODO: Get from app settings
             var apiKey = "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";
             var client = new SendGridClient(apiKey);
             var msg = new SendGridMessage()
@@ -126,6 +127,7 @@ namespace ChoreFunction
 
         public static void SendWhatsapp(string content)
         {
+            //TODO: Get from app settings
             TwilioClient.Init(
                "ACbd2ded232650fe8b256e968fc3bd7012",
                "37dbefe1c4bd68765e8ecccdf7ee6394"
