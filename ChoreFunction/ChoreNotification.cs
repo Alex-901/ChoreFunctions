@@ -48,7 +48,7 @@ namespace ChoreFunction
 
             if (!html)
             {
-                sb.Append("The below chores are due today");
+                sb.Append("The below chores are due today, yes you laura.");
 
                 sb.Append(Environment.NewLine);
 
